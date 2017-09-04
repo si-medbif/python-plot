@@ -15,9 +15,10 @@ import matplotlib.patches as mpatches
 import numpy as np
 import sys
 
-if int(matplotlib.__version__[0]) < 2:
-    sys.stderr.write('WARNING: This script was optimized with Matplotlib 2.0.2.\n')
+if int(matplotlib.__version__[0]) != 2:
+    sys.stderr.write('WARNING: This script was optimized with Matplotlib 1.5.1.\n')
     sys.stderr.write('\tCurrent version of Matplotlib is {}.\n'.format(matplotlib.__version__))
+    sys.stderr.write('\tVisual presentation may differ from intended.\n')
     OLD_VERSION = True
 else:
     OLD_VERSION = False
@@ -35,7 +36,6 @@ def plot_pca(args, db):
             df[key] = db[key]
         except ValueError:
             continue
-    skipped = 0
     pcs = []
     palette = {}
     for i in range(len(df1)):
@@ -69,7 +69,7 @@ def plot_pca(args, db):
     recs = []
     for i,n in enumerate(db['highlights']):
         recs.append(mpatches.Rectangle((0,0),1,1,fc=COLORS[i]))
-    ax[0,0].legend(recs,db['highlights'],loc=0,framealpha=0)
+    ax[0,0].legend(recs,db['highlights'],loc=0,framealpha=0, fontsize=10)
     plt.tight_layout()
     outplot = '{}.png'.format(args.prefix)
     fig.savefig(outplot)
