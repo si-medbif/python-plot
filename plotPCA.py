@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module Docstring
+Plotting script for making quick visualization of PCA calculatins from Plinks --pca option.
 """
 
 __author__ = "Harald Grove"
@@ -9,10 +9,18 @@ __license__ = "MIT"
 
 import argparse
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import sys
+
+if int(matplotlib.__version__[0]) < 2:
+    sys.stderr.write('WARNING: This script was optimized with Matplotlib 2.0.2.\n')
+    sys.stderr.write('\tCurrent version of Matplotlib is {}.\n'.format(matplotlib.__version__))
+    OLD_VERSION = True
+else:
+    OLD_VERSION = False
 
 COLORS = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99',\
           '#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a']
@@ -40,14 +48,19 @@ def plot_pca(args, db):
     ax[1,1].set_xlabel('Principal Component (PC)')
     ax[1,1].set_xlim([0,len(pcs)+1])
     ax[1,1].set_xticks(x)
-    # Plot PC1&PC2
     df1 = df[df['zorder']==1]
     df2 = df[df['zorder']==2]
-    df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], s=df1['sizes'], ax=ax[0,0])
-    df2.plot(kind='scatter', x=2, y=3, c=df2['colors'], s=df2['sizes'], ax=ax[0,0], zorder=2)
-    # Plot PC3&PC4
-    df1.plot(kind='scatter', x=4, y=5, c=df1['colors'], s=df1['sizes'], ax=ax[0,1])
-    df2.plot(kind='scatter', x=4, y=5, c=df2['colors'], s=df2['sizes'], ax=ax[0,1], zorder=2)
+    # Plot PC1&PC2
+    if df1.shape[0] > 0:
+        df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], edgecolors='none', \
+                 s=df1['sizes'], ax=ax[0,0], zorder=1)
+        df1.plot(kind='scatter', x=4, y=5, c=df1['colors'], edgecolors='none', \
+                 s=df1['sizes'], ax=ax[0,1], zorder=1)
+    if df2.shape[0] > 0:
+        df2.plot(kind='scatter', x=2, y=3, c=df2['colors'], edgecolors='none', \
+                 s=df2['sizes'], ax=ax[0,0], zorder=2)
+        df2.plot(kind='scatter', x=4, y=5, c=df2['colors'], edgecolors='none', \
+                 s=df2['sizes'], ax=ax[0,1], zorder=2)
     ax[0,0].set_xlabel('PC1 [{}%]'.format(int(pcs[0])))
     ax[0,0].set_ylabel('PC2 [{}%]'.format(int(pcs[1])))
     ax[0,1].set_xlabel('PC3 [{}%]'.format(int(pcs[2])))
