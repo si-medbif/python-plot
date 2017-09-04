@@ -14,70 +14,54 @@ import matplotlib.patches as mpatches
 import numpy as np
 import sys
 
-COLORS = ['blue','green','red','cyan','magenta','yellow','black']
+COLORS = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99',\
+          '#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a']
 
 def plot_pca(args, db):
     eigenvecfile = '{}.eigenvec'.format(args.prefix)
     eigenvalfile = '{}.eigenval'.format(args.prefix)
     df = pd.read_table(eigenvecfile, sep=' ', header=None)
     df1 = pd.read_table(eigenvalfile, sep=' ', header=None)
-    plot_legend = True
-    if len(db['groups']) >= 10:
-        plot_legend = False
+    for key in db:
+        try:
+            df[key] = db[key]
+        except ValueError:
+            continue
     skipped = 0
     pcs = []
-    pheno = {}
-    plotted = []
+    palette = {}
     for i in range(len(df1)):
         pcs.append(100 * df1[0][i] / sum(df1[0]))
     fig, ax = plt.subplots(2,2,figsize=(10,10))
+    # Plot Scree plot, lower right
     x = np.arange(1,len(pcs)+1)
     ax[1,1].plot(x,pcs)
     ax[1,1].set_ylabel('Explained variance pr. PC [%]')
     ax[1,1].set_xlabel('Principal Component (PC)')
     ax[1,1].set_xlim([0,len(pcs)+1])
     ax[1,1].set_xticks(x)
-    for index,row in df.iterrows():
-        if row[1] in db:
-            size = db[row[1]]['size']
-            color = db[row[1]]['color']
-            zorder = db[row[1]]['zorder']
-            marker = db[row[1]]['marker']
-            group = db[row[1]]['group']
-        else:
-            skipped += 1
-            continue
-        if plot_legend < 10:
-            if group not in plotted:
-                plotted.append(group)
-            pheno[group] = color
-        ax[0,0].scatter(row[2],row[3],\
-                        s=size,c=color,\
-                        edgecolors='none',\
-                        marker=marker, zorder=zorder)
-        #ax[0,0].text(row[2]+0.01,row[3]+0.01,row[0])
-        ax[0,1].scatter(row[4],row[5],\
-                        s=size,c=color,\
-                        edgecolors='none',\
-                        marker=marker, zorder=zorder)
-        #ax[0,1].text(row[2]+0.01,row[3]+0.01,row[0])
-    else:
-        sys.stderr.write('Skipped {} samples.\n'.format(skipped))
+    # Plot PC1&PC2
+    df1 = df[df['zorder']==1]
+    df2 = df[df['zorder']==2]
+    df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], s=df1['sizes'], ax=ax[0,0])
+    df2.plot(kind='scatter', x=2, y=3, c=df2['colors'], s=df2['sizes'], ax=ax[0,0], zorder=2)
+    # Plot PC3&PC4
+    df1.plot(kind='scatter', x=4, y=5, c=df1['colors'], s=df1['sizes'], ax=ax[0,1])
+    df2.plot(kind='scatter', x=4, y=5, c=df2['colors'], s=df2['sizes'], ax=ax[0,1], zorder=2)
     ax[0,0].set_xlabel('PC1 [{}%]'.format(int(pcs[0])))
     ax[0,0].set_ylabel('PC2 [{}%]'.format(int(pcs[1])))
     ax[0,1].set_xlabel('PC3 [{}%]'.format(int(pcs[2])))
     ax[0,1].set_ylabel('PC4 [{}%]'.format(int(pcs[3])))
     #***********************
-    if plot_legend:
-        recs = []
-        for i in plotted:
-            recs.append(mpatches.Rectangle((0,0),1,1,fc=pheno[i]))
-            ax[0,0].legend(recs,plotted,loc=0,framealpha=0)
+    recs = []
+    for i,n in enumerate(db['highlights']):
+        recs.append(mpatches.Rectangle((0,0),1,1,fc=COLORS[i]))
+    ax[0,0].legend(recs,db['highlights'],loc=0,framealpha=0)
     plt.tight_layout()
     outplot = '{}.png'.format(args.prefix)
     fig.savefig(outplot)
 
-def read_label(args, db):
+def read_samples(args, db):
     """
     Reads and sets information for each sample in the plot
     """
@@ -88,34 +72,36 @@ def read_label(args, db):
     with open(infile, 'r') as fin:
         for line in fin:
             group, sample = line.strip().split(None, 2)[0:2]
-            db[sample] = {'group':group,'size':50,\
-                          'marker':'.','zorder':1,\
-                          'color':'gray'}
-            if group not in db['groups']:
-                db['groups'][group] = []
-            db['groups'][group].append(sample)
+            if group in db['highlights']:
+                db['groups'].append(group)
+                db['sizes'].append(50)
+                db['markers'].append('.')
+                db['zorder'].append(2)
+                rank = db['highlights'].index(group)
+                db['colors'].append(COLORS[rank])
+            else:
+                db['groups'].append(group)
+                db['sizes'].append(5)
+                db['markers'].append('.')
+                db['zorder'].append(1)
+                db['colors'].append('#dddddd')
 
 def mark_highlights(args, db):
     """
     Change display settings for highlighted groups.
     """
     with open(args.mark, 'r') as fin:
-        c_ind = 0
         for line in fin:
             name = line.strip()
-            for sample in db['groups'][name]:
-                db[sample]['size'] = 100
-                db[sample]['color'] = COLORS[c_ind]
-                db[sample]['zorder'] = 5
-                db[sample]['marker'] = 'o'
-            c_ind += 1
+            db['highlights'].append(name)
 
 def main(args):
     """ Main entry point of the app """
-    db = {'groups':{}}
-    read_label(args, db)
+    db = {'groups':[], 'names':[],'colors':[], 'sizes':[], \
+          'zorder':[], 'markers':[], 'highlights':[]}
     if args.mark is not None:
         mark_highlights(args, db)
+    read_samples(args, db)
     plot_pca(args, db)
 
 if __name__ == "__main__":
