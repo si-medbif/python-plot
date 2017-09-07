@@ -37,20 +37,27 @@ def plot_pca(args, db):
             continue
     skipped = 0
     pcs = []
+    cpcs = []
     palette = {}
     for i in range(len(df1)):
         pcs.append(100 * df1[0][i] / sum(df1[0]))
+        cpcs.append('{:.1f}'.format(sum(pcs)))
     fig, ax = plt.subplots(2,2,figsize=(10,10))
-    # Plot Scree plot, lower right
+    # *****************************************************
+    # Plot Scree plot, lower left
     x = np.arange(1,len(pcs)+1)
-    ax[1,1].plot(x,pcs)
-    ax[1,1].set_ylabel('Explained variance pr. PC [%]')
-    ax[1,1].set_xlabel('Principal Component (PC)')
-    ax[1,1].set_xlim([0,len(pcs)+1])
-    ax[1,1].set_xticks(x)
+    ax[1,0].plot(x,pcs)
+    for i, txt in enumerate(cpcs):
+        #print(i, txt, x[i], pcs[i])
+        ax[1,0].annotate(cpcs[i], (x[i],pcs[i]))
+    ax[1,0].set_ylabel('Explained variance pr. PC [%]')
+    ax[1,0].set_xlabel('Principal Component (PC)')
+    ax[1,0].set_xlim([0,len(pcs)+1])
+    ax[1,0].set_xticks(x)
+    # *****************************************************
+    # Plot PC1&PC2 and PC3&PC4
     df1 = df[df['zorder']==1]
     df2 = df[df['zorder']==2]
-    # Plot PC1&PC2
     if df1.shape[0] > 0:
         df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], edgecolors='none', \
                  s=df1['sizes'], ax=ax[0,0], zorder=1)
@@ -65,7 +72,8 @@ def plot_pca(args, db):
     ax[0,0].set_ylabel('PC2 [{}%]'.format(int(pcs[1])))
     ax[0,1].set_xlabel('PC3 [{}%]'.format(int(pcs[2])))
     ax[0,1].set_ylabel('PC4 [{}%]'.format(int(pcs[3])))
-    #***********************
+    # *****************************************************
+    # Create the Legend, place it in the first frame
     recs = []
     for i,n in enumerate(db['highlights']):
         recs.append(mpatches.Rectangle((0,0),1,1,fc=COLORS[i]))
