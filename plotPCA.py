@@ -22,8 +22,9 @@ if int(matplotlib.__version__[0]) < 2:
 else:
     OLD_VERSION = False
 
-COLORS = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99',\
-          '#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a']
+COLORS= ['#e6194b','#3cb44b','#ffe119','#0082c8','#f58231','#911eb4','#46f0f0','#f032e6','#d2f53c','#fabebe',
+        '#008080','#e6beff','#aa6e28','#fffac8','#800000','#aaffc3','#808000','#ffd8b1','#000080','#808080',
+         '#FFFFFF','#000000']
 
 def plot_pca(args, db):
     eigenvecfile = '{}.eigenvec'.format(args.prefix)
@@ -55,7 +56,7 @@ def plot_pca(args, db):
     ax[1,0].set_xlim([0,len(pcs)+1])
     ax[1,0].set_xticks(x)
     # *****************************************************
-    # Plot PC1&PC2 and PC3&PC4
+    # Plot PC1&PC2 and PC3&PC4, upper left and right
     df1 = df[df['zorder']==1]
     df2 = df[df['zorder']==2]
     if df1.shape[0] > 0:
@@ -72,6 +73,9 @@ def plot_pca(args, db):
     ax[0,0].set_ylabel('PC2 [{}%]'.format(int(pcs[1])))
     ax[0,1].set_xlabel('PC3 [{}%]'.format(int(pcs[2])))
     ax[0,1].set_ylabel('PC4 [{}%]'.format(int(pcs[3])))
+    # *****************************************************
+    # Plot loading plot PC1&PC2, lower right
+
     # *****************************************************
     # Create the Legend, place it in the first frame
     recs = []
@@ -92,13 +96,20 @@ def read_samples(args, db):
         infile = '{}.eigenvec'.format(args.prefix)
     with open(infile, 'r') as fin:
         for line in fin:
-            group, sample = line.strip().split(None, 2)[0:2]
+            sample, group = line.strip().split(None, 2)[0:2]
             if group in db['highlights']:
                 db['groups'].append(group)
                 db['sizes'].append(50)
                 db['markers'].append('.')
                 db['zorder'].append(2)
                 rank = db['highlights'].index(group)
+                db['colors'].append(COLORS[rank])
+            elif len(db['highlights']) == 0:
+                db['groups'].append(group)
+                db['sizes'].append(50)
+                db['markers'].append('.')
+                db['zorder'].append(2)
+                rank = -1
                 db['colors'].append(COLORS[rank])
             else:
                 db['groups'].append(group)

@@ -22,11 +22,14 @@ COLORS= ['#e6194b','#3cb44b','#ffe119','#0082c8','#f58231','#911eb4','#46f0f0','
 
 def plot_scatter(args):
     fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-    df = pd.read_table(args.infile, sep='\t', header=None)
-    x = args.xaxis-1
-    y = args.yaxis-1
-    df.plot(kind='scatter', x=x, y=y, c=COLORS[0], edgecolors='none',
-            s = 10, ax = ax, zorder = 1)
+    df = pd.read_table(args.infile, sep='\t', header=0)
+    y = args.yaxis - 1
+    if args.xaxis == 0:
+        df.plot(kind='line',y=y, c=COLORS[0], ax=ax)
+    else:
+        x = args.xaxis-1
+        df.plot(kind='scatter', x=x, y=y, c=COLORS[0], edgecolors='none',
+                s = 10, ax = ax, zorder = 1)
     ax.set_xlabel('{}'.format(args.xaxis))
     ax.set_ylabel('{}'.format(args.yaxis))
     # *****************************************************
