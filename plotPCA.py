@@ -4,7 +4,7 @@ Plotting script for making quick visualization of PCA calculatins from Plinks --
 """
 
 __author__ = "Harald Grove"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __license__ = "MIT"
 
 import argparse
@@ -60,14 +60,14 @@ def plot_pca(args, db):
     df1 = df[df['zorder']==1]
     df2 = df[df['zorder']==2]
     if df1.shape[0] > 0:
-        df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], edgecolors='none', \
+        df1.plot(kind='scatter', x=2, y=3, c=df1['colors'], edgecolors='none',
                  s=df1['sizes'], ax=ax[0,0], zorder=1)
-        df1.plot(kind='scatter', x=4, y=5, c=df1['colors'], edgecolors='none', \
+        df1.plot(kind='scatter', x=4, y=5, c=df1['colors'], edgecolors='none',
                  s=df1['sizes'], ax=ax[0,1], zorder=1)
     if df2.shape[0] > 0:
-        df2.plot(kind='scatter', x=2, y=3, c=df2['colors'], edgecolors='none', \
+        df2.plot(kind='scatter', x=2, y=3, c=df2['colors'], edgecolors='none',
                  s=df2['sizes'], ax=ax[0,0], zorder=2)
-        df2.plot(kind='scatter', x=4, y=5, c=df2['colors'], edgecolors='none', \
+        df2.plot(kind='scatter', x=4, y=5, c=df2['colors'], edgecolors='none',
                  s=df2['sizes'], ax=ax[0,1], zorder=2)
     ax[0,0].set_xlabel('PC1 [{}%]'.format(int(pcs[0])))
     ax[0,0].set_ylabel('PC2 [{}%]'.format(int(pcs[1])))
@@ -90,11 +90,7 @@ def read_samples(args, db):
     """
     Reads and sets information for each sample in the plot
     """
-    if args.samples is not None:
-        infile = args.samples
-    else:
-        infile = '{}.eigenvec'.format(args.prefix)
-    with open(infile, 'r') as fin:
+    with open(args.samples, 'r') as fin:
         for line in fin:
             sample, group = line.strip().split(None, 2)[0:2]
             if group in db['highlights']:
@@ -104,19 +100,55 @@ def read_samples(args, db):
                 db['zorder'].append(2)
                 rank = db['highlights'].index(group)
                 db['colors'].append(COLORS[rank])
-            elif len(db['highlights']) == 0:
-                db['groups'].append(group)
-                db['sizes'].append(50)
-                db['markers'].append('.')
-                db['zorder'].append(2)
-                rank = -1
-                db['colors'].append(COLORS[rank])
             else:
                 db['groups'].append(group)
                 db['sizes'].append(5)
                 db['markers'].append('.')
                 db['zorder'].append(1)
                 db['colors'].append('#dddddd')
+
+def read_family(args, db):
+    """
+    Reads and sets information for each sample in the plot
+    """
+    with open(args.family, 'r') as fin:
+        for line in fin:
+            fid, iid, father, mother, sex, pheno = line.strip().split(None, 6)[0:6]
+            group = [fid, iid, father, mother, sex, pheno][args.column-1]
+            if pheno in db['highlights']:
+                db['groups'].append(group)
+                db['sizes'].append(50)
+                db['markers'].append('.')
+                db['zorder'].append(2)
+                rank = db['highlights'].index(group)
+                db['colors'].append(COLORS[rank])
+            else:
+                db['groups'].append(pheno)
+                db['sizes'].append(5)
+                db['markers'].append('.')
+                db['zorder'].append(1)
+                db['colors'].append('#dddddd')
+
+def read_default(args, db):
+    """
+    Reads and sets information for each sample in the plot
+    """
+    with open('{}.eigenvec'.format(args.prefix), 'r') as fin:
+        for line in fin:
+            group, sample = line.strip().split(None, 2)[0:2]
+            if group in db['highlights']:
+                db['groups'].append(group)
+                db['sizes'].append(50)
+                db['markers'].append('.')
+                db['zorder'].append(2)
+                rank = db['highlights'].index(group)
+                db['colors'].append(COLORS[rank])
+            else:
+                db['groups'].append(group)
+                db['sizes'].append(5)
+                db['markers'].append('.')
+                db['zorder'].append(1)
+                db['colors'].append(COLORS[-1])
 
 def mark_highlights(args, db):
     """
@@ -129,11 +161,18 @@ def mark_highlights(args, db):
 
 def main(args):
     """ Main entry point of the app """
-    db = {'groups':[], 'names':[],'colors':[], 'sizes':[], \
+    db = {'groups':[], 'names':[],'colors':[], 'sizes':[],
           'zorder':[], 'markers':[], 'highlights':[]}
     if args.mark is not None:
         mark_highlights(args, db)
-    read_samples(args, db)
+    if args.family is not None and args.samples is not None:
+        raise Exception("Options '--family' and '--samples' cannot be used together!")
+    if args.samples is not None:
+        read_samples(args, db)
+    elif args.family is not None:
+        read_family(args, db)
+    else:
+        read_default(args, db)
     plot_pca(args, db)
 
 if __name__ == "__main__":
@@ -144,10 +183,12 @@ if __name__ == "__main__":
     parser.add_argument("prefix", help="File prefix (prefix.eigenvec & prefix.eigenval)")
 
     # Optional argument flag which defaults to False
-    parser.add_argument('-f', '--flag', action="store_true", default=False)
+    #parser.add_argument('-', '--flag', action="store_true", default=False)
 
     # Optional argument which requires a parameter (eg. -d test)
-    parser.add_argument("-s", "--samples", help="List of samples (format: sample group).")
+    parser.add_argument("-f", "--family", help="Plink sample information, 6 columns.")
+    parser.add_argument("-c", "--column", type=int, help="Column in family file for grouping (1-6).", default=6)
+    parser.add_argument("-s", "--samples", help="List of samples (2 columns: sample group).")
     parser.add_argument("-m", "--mark", help="Groups to highlight.")
 
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
