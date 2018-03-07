@@ -31,7 +31,8 @@ class plotPCA(object):
         self.eigenvecfile = '{}.eigenvec'.format(prefix)
         self.eigenvalfile = '{}.eigenval'.format(prefix)
         self.db = {'groups':[], 'names':[],'colors':[], 'sizes':[],
-          'zorder':[], 'markers':[], 'highlights':[]}
+          'zorder':[], 'markers':[]}
+        self.highlights = {}
         self.famfile = fam
         self.groupfile = group
         self.groups = []
@@ -88,11 +89,12 @@ class plotPCA(object):
 
         # *****************************************************
         # Create the Legend, place it in the fourth frame
-        recs = []
-        for i,n in enumerate(self.groups):
-            recs.append(mpatches.Rectangle((0,0),1,1,fc=self.colors[i]))
-        ax[1,1].legend(recs,self.groups,loc='center',framealpha=0)
-        ax[1,1].text(0.1,0.9,'Grouped by: {}'.format(self.columnid[self.column - 1]))
+        if len(self.groups) > 0:
+            recs = []
+            for i,n in enumerate(self.groups):
+                recs.append(mpatches.Rectangle((0,0),1,1,fc=self.colors[i]))
+            ax[1,1].legend(recs,self.groups,loc='center',framealpha=0)
+            ax[1,1].text(0.1,0.9,'Grouped by: {}'.format(self.columnid[self.column]))
         plt.tight_layout()
         outplot = '{}.png'.format(self.outprefix)
         fig.savefig(outplot)
@@ -106,14 +108,7 @@ class plotPCA(object):
         with open(self.groupfile, 'r') as fin:
             for line in fin:
                 sample, group = line.strip().split(None, 2)[0:2]
-                if group not in self.groups:
-                    self.groups.append(group)
-                self.db['groups'].append(group)
-                self.db['sizes'].append(50)
-                self.db['markers'].append('.')
-                self.db['zorder'].append(2)
-                rank = self.groups.index(group)
-                self.db['colors'].append(self.colors[rank])
+                self.highlights[sample] = group
 
     def read_family(self, fam=None):
         """
@@ -126,38 +121,32 @@ class plotPCA(object):
             for line in fin:
                 fid, iid, father, mother, sex, pheno = line.strip().split(None, 6)[0:6]
                 group = [fid, iid, father, mother, sex, pheno][self.column-1]
-                if group not in self.groups:
-                    self.groups.append(group)
-                self.db['groups'].append(group)
-                self.db['sizes'].append(50)
-                self.db['markers'].append('.')
-                self.db['zorder'].append(2)
-                rank = self.groups.index(group)
-                self.db['colors'].append(self.colors[rank])
+                self.highlights[iid] = group
 
     def read_default(self):
         """
         Reads and sets information for each sample in the plot
         """
-        self.groups = ['']
+        self.groups = []
         with open(self.eigenvecfile, 'r') as fin:
             for line in fin:
                 group, sample = line.strip().split(None, 2)[0:2]
-                self.db['groups'].append(group)
-                self.db['sizes'].append(50)
-                self.db['markers'].append('.')
-                self.db['zorder'].append(2)
-                self.db['colors'].append(self.colors[-1])
-
-    def mark_highlights(self):
-        """
-        TODO: Allow user to specify certain samples to highlight in some way
-        Change display settings for highlighted groups.
-        """
-        with open(args.mark, 'r') as fin:
-            for line in fin:
-                name = line.strip()
-                self.db['highlights'].append(name)
+                if sample in self.highlights:
+                    group = self.highlights[sample]
+                    if group not in self.groups:
+                        self.groups.append(group)
+                    self.db['groups'].append(group)
+                    self.db['sizes'].append(50)
+                    self.db['markers'].append('.')
+                    self.db['zorder'].append(2)
+                    rank = self.groups.index(group)
+                    self.db['colors'].append(self.colors[rank])
+                else:
+                    self.db['groups'].append('')
+                    self.db['sizes'].append(30)
+                    self.db['markers'].append('.')
+                    self.db['zorder'].append(1)
+                    self.db['colors'].append(self.colors[-1])
 
 def main(args):
     """ Main entry point of the app """
@@ -170,8 +159,7 @@ def main(args):
         pca.read_samples()
     elif args.family is not None:
         pca.read_family()
-    else:
-        pca.read_default()
+    pca.read_default()
     pca.plot_pca()
 
 if __name__ == "__main__":
