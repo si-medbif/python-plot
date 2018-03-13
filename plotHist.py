@@ -29,6 +29,9 @@ def plot_hist(args, db):
     ds = pd.Series(db['data'])
     fig, ax = plt.subplots(1,1,figsize=(10,10))
     ds.hist(grid=None, ax=ax, bins=args.bins)
+    if args.xlim is not None:
+        xmin, xmax = args.xlim.split(',')
+        plt.xlim(int(xmin), int(xmax))
     plt.tight_layout()
     outplot = '{}.png'.format(args.datafile.rsplit('.',1)[0])
     fig.savefig(outplot)
@@ -47,6 +50,8 @@ def read_samples(args, db):
     """
     with open(args.datafile, 'r') as fin:
         for line in fin:
+            if line.startswith('#'):
+                continue
             line_l = line.strip().split()
             try:
                 value = float(line_l[args.column-1])
@@ -83,6 +88,7 @@ if __name__ == "__main__":
     # Optional argument which requires a parameter (eg. -d test)
     parser.add_argument("-c", "--column", type=int, help="Column with data to plot.")
     parser.add_argument("-b", "--bins", type=int, help="Number of bins.")
+    parser.add_argument("-x", "--xlim", help="X limits [min,max]")
     #parser.add_argument("-m", "--mark", help="Groups to highlight.")
 
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
