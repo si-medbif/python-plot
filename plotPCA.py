@@ -98,6 +98,7 @@ class plotPCA(object):
         plt.tight_layout()
         outplot = '{}.png'.format(self.outprefix)
         fig.savefig(outplot)
+        plt.show()
 
     def read_samples(self, group=None):
         """

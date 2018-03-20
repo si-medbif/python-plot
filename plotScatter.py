@@ -62,6 +62,7 @@ class plotScatter(object):
             #ax.text(0.1,0.9,': {}'.format(self.c))
         plt.tight_layout()
         fig.savefig(self.outfile)
+        plt.show()
 
     def read_bins(self):
         """
