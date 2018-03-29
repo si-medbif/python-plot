@@ -7,9 +7,10 @@ __author__ = "Harald Grove"
 __version__ = "0.1.0"
 __license__ = "MIT"
 
+import matplotlib
+matplotlib.use('Agg')
 import argparse
 import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
