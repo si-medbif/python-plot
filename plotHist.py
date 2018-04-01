@@ -31,7 +31,7 @@ def plot_hist(args, db):
     fig, ax = plt.subplots(1,1,figsize=(10,10))
     ds.hist(grid=None, ax=ax, bins=args.bins)
     if args.xlim is not None:
-        xmin, xmax = args.xlim.split(',')
+        xmin, xmax = args.xlim
         plt.xlim(int(xmin), int(xmax))
     plt.tight_layout()
     outplot = '{}.png'.format(args.datafile.rsplit('.',1)[0])
@@ -50,6 +50,7 @@ def read_samples(args, db):
     Reads and sets information for each sample in the plot
     """
     with open(args.datafile, 'r') as fin:
+        xmin, xmax = args.xlim
         for line in fin:
             if line.startswith('#'):
                 continue
@@ -59,6 +60,8 @@ def read_samples(args, db):
             except ValueError:
                 value = line_l[args.column - 1]
                 db['catdata'][value] = db['catdata'].get(value, 0) + 1
+                continue
+            if xmin > value or xmax < value:
                 continue
             db['data'].append(value)
             if db['max'] is None:
@@ -89,7 +92,7 @@ if __name__ == "__main__":
     # Optional argument which requires a parameter (eg. -d test)
     parser.add_argument("-c", "--column", type=int, help="Column with data to plot.")
     parser.add_argument("-b", "--bins", type=int, help="Number of bins.")
-    parser.add_argument("-x", "--xlim", help="X limits [min,max]")
+    parser.add_argument("-x", "--xlim", nargs=2, type=float, help="X limits [min max]")
     #parser.add_argument("-m", "--mark", help="Groups to highlight.")
 
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
